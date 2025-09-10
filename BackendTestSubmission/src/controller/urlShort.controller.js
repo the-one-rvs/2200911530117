@@ -33,7 +33,7 @@ const addShortURL = asyncHandler(async(req, res) => {
             throw new ApiError(400, "Something went wrong")
         }
         
-        return res.status(201).json(ApiResponse(201, {shortLink, expiry: validity}, "Short URL created successfully"))
+        return res.status(201).json(new ApiResponse(201, {shortLink, expiry: validity}, "Short URL created successfully"))
     } catch (error) {
         throw new ApiError(400, error.message)
     }
@@ -60,26 +60,25 @@ const getShortURLStats = asyncHandler(async(req, res) => {
         expiry: expiry
     }
 
-    return res.status(200).json(ApiResponse(200, returnLink, "Short URL stats fetched successfully"))
+    return res.status(200).json(new ApiResponse(200, returnLink, "Short URL stats fetched successfully"))
 })
 
 const accessShortURL = asyncHandler(async(req, res) => {
-    const { shortCode } = req.params
-    if (!shortCode){
-        throw new ApiError(400, "Short code is required")
+    const {shortCode} = req.params;
+    const shortLink = await ShortUrl.findOne({ shortCode });
+    if (!shortLink) {
+    throw new ApiError(400, "Short code not found");
     }
-    const shortLink = await ShortUrl.findOne({shortCode}).lean()
-    if (!shortLink){
-        throw new ApiError(400, "Short code not found")
+
+    const expiry = shortLink.createdAt + shortLink.validity * 24 * 60 * 60 * 1000;
+    if (Date.now() > expiry) {
+    throw new ApiError(400, "Short code has expired");
     }
-    const expiry = shortLink.createdAt + shortLink.validity * 24 * 60 * 60 * 1000
-    if (Date.now() > expiry){
-        throw new ApiError(400, "Short code has expired")
-    }
-    shortLink.clicks += 1
-    await shortLink.save()
-    
-    return res.redirect(shortLink.url)
+
+    shortLink.clicks += 1;
+    await shortLink.save();
+
+    return res.redirect(shortLink.url);
 })
 
 export{
