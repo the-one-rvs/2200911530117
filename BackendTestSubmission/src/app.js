@@ -8,7 +8,7 @@ app.use(cors({
 app.use(express.json({limit: "20kb"}))
 app.use(express.urlencoded({extended: true, limit: "20kb" }))
 
-import urlShortRoutes from "./routes/urlShort.routes.js"
-app.use(urlShortRoutes)
+import urlShortRouter from "./routes/urlShort.routes.js"
+app.use("/", urlShortRouter)
 
 export { app }
